@@ -1,4 +1,7 @@
 # CONTACTA O PROJETA < ApI do CpTEC PARA OBTER INFOS #
+
+# FUNCIONA!
+
 from typing import List
 
 import matplotlib

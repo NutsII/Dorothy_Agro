@@ -10,18 +10,39 @@ import numpy as np
 import datetime
 
 
-###### DEFINIR OS PARÂMETROS DA RODADA ####
+###### DEFINIR OS PARÂMETROS DA RODADA - PREENCHER ####
 
-dia_do_plantio = '2019-11-21'
-dia_da_emergencia = '2019-12-01'
-dia_do_v8 = '2019-01-15'
-dia_da_colheita = '2020-03-30'
+dia_do_plantio = '2019-11-21' #ok
 dia_aparecimento_esporo = '2019-11-21'
+estadio = 'V2'
+
+diagnostico_visual = np.array(
+
+[['oidio',      'negativo'],
+['ferrugem',    'negativo'],
+['mancha alvo', 'negativo'],
+['antracnose',  'negativo']]
+
+)
 
 latitude = '-13.40'
 longitude = '-46.09'
 
 ########################################
+
+dia_da_emergencia = '2019-12-01' #ok
+dia_do_v8 = '2019-01-15' #ok
+dia_da_colheita = '2020-03-30'
+
+dt_hoje = datetime.datetime.now()
+dt_hoje = dt_hoje.replace(hour=0,minute=0,second=0,microsecond=0)
+
+diagnostico_bool_vect = np.where(diagnostico_visual=='positivo')
+if diagnostico_bool_vect[0].size == 0:
+    diagnostico_bool = False
+else:
+    diagnostico_bool = True
+
 
 
 dp = datetime.datetime.strptime(dia_do_plantio, '%Y-%m-%d')
@@ -57,8 +78,8 @@ with urllib.request.urlopen(api_4) as url:
 
     data_b = data_3 + data_4
 
-    data_fim_dados = datetime.datetime.now() + datetime.timedelta(days=7)
-    data_inicio_dados = datetime.datetime.now() + datetime.timedelta(days=-30)
+    data_fim_dados = dt_hoje + datetime.timedelta(days=7)
+    data_inicio_dados = dt_hoje + datetime.timedelta(days=-30)
 
     # DECIFRA O JSON RECEBIDO #
     dados_met = []
@@ -81,7 +102,7 @@ with urllib.request.urlopen(api_4) as url:
 
     # OBTEM A PRECIPITACAO DOS ULTIMOS 30 DIAS #
 
-    print(dados_met)
+    # print(dados_met)
 
     chuva_acumulada = []
     dias_acumulado = []
@@ -105,7 +126,7 @@ with urllib.request.urlopen(api_4) as url:
         dia_da_semana.append(d)
         dia_do_ano.append(e)
 
-    print(type(dia_do_ano))
+    # print(type(dia_do_ano))
 
 
     while dia_da_semana[0] > 0:
@@ -140,6 +161,10 @@ with urllib.request.urlopen(api_4) as url:
     for contador_2 in range(0, len(fator_acumulado)):
 
         if fator_acumulado[contador_2] > 60 and auxiliar_contador == 0 and dia_do_ano[contador_2] >= desp:
+            af = 100
+            auxiliar_contador = 15
+            leg_af = 'Aplicar'
+        if diagnostico_bool == True and auxiliar_contador==0 and dia_do_ano[contador_2] >= dt_hoje:
             af = 100
             auxiliar_contador = 15
             leg_af = 'Aplicar'
@@ -206,7 +231,7 @@ with urllib.request.urlopen(api_4) as url:
 
     for item in data_b:
         if (datetime.datetime.strptime(item['date'], '%Y-%m-%d') < data_fim_dados
-                and datetime.datetime.strptime(item['date'], '%Y-%m-%d') > datetime.datetime.now()):
+                and datetime.datetime.strptime(item['date'], '%Y-%m-%d') >= dt_hoje):
             met_valores_h = {"date": None, "value": None, "dia": None, "dia_da_semana": None, "data_abreviada":None,}
             met_valores_h['date'] = item['date']
             met_valores_h['value'] = item['value']
@@ -219,14 +244,14 @@ with urllib.request.urlopen(api_4) as url:
             met_valores_h['data_abreviada'] = datetime.datetime.strptime(item['date'], '%Y-%m-%d').strftime('%d-%m')
             dados_met_h.append(met_valores_h)
 
-    print(dados_met_h)
+    # print(dados_met_h)
 
     tamanho = int(len(dados_met_h)/8)
     tempo_acumulada = [[0 for x in range(tamanho)] for y in range(8)]
     dia_acumulada = []
     hora_acumulada = [[0 for x in range(tamanho)] for y in range(8)]
 
-    print(tamanho)
+    # print(tamanho)
 
     "tempo_acumulada = [[0 for x in range(8)] for y in range(tamanho)]"
 
@@ -264,11 +289,125 @@ with urllib.request.urlopen(api_4) as url:
     tempo_acumulada_reshape = np.reshape(tempo_acumulada, (8, -1))
     hora_acumulada_reshape = np.reshape(hora_acumulada, (8, -1))
 
+    a_est = np.array([[0, 15, 25, 35, 45, 55, 65, 75, 85, 91, 97, 103, 109, 128, 147, 155, 163], [0, 13, 23, 33, 43, 53, 63, 73, 83, 90, 97, 104, 111, 131, 151, 160, 169], [0, 11, 21, 31, 42, 53, 64, 75, 86, 92, 98, 104, 110, 130, 150, 159, 168], [0, 10, 20, 30, 41, 52, 63, 74, 85, 91, 97, 103, 109, 129, 149, 159, 169], [0, 10, 20, 30, 41, 52, 63, 74, 85, 90, 95, 100, 105, 125, 145, 156, 167], [0, 9, 19, 29, 39, 49, 59, 69, 79, 84, 89, 94, 99, 120, 141, 151, 161], [0, 8, 18, 28, 38, 48, 58, 68, 78, 83, 88, 93, 98, 120, 142, 152, 162], [0, 8, 18, 28, 37, 46, 55, 64, 73, 77, 81, 85, 89, 112, 135, 143, 151], [0, 7, 17, 27, 36, 45, 54, 63, 72, 76, 80, 84, 88, 112, 136, 143, 150], [0,7,17,27,35,43,51,59,67,71,75,79,83,107,131,136,141]])
+    b_est = np.array(['01/10/2019', '11/10/2019', '21/10/2019', '01/11/2019', '11/11/2019', '21/11/2019', '01/12/2019', '11/12/2019', '21/12/2019', '31/12/2019'])
+    c_est = np.array([['S', 'E', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'COL']])
+    d_est = np.array(['S', 'E', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'COL'])
 
 
-    fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, ncols=1,gridspec_kw={'height_ratios': [1, 1,3]})
-    fig.subplots_adjust(hspace=0.9)
 
+    lista_dias = []
+
+    for contador_1 in range(0, len(b_est)):
+        t = b_est[contador_1]
+        delta = datetime.datetime.strptime(t, '%d/%m/%Y')  - dt_hoje #datetime.datetime.strptime(dt_hoje, '%Y/%m/%d')
+        delta_valor = abs(delta.days)
+        lista_dias.append(delta_valor)
+
+    def posicao(array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
+
+    pos_dia = posicao(lista_dias,0)
+    pos_estad_0 = np.where(c_est == estadio)
+    pos_estad = pos_estad_0[1]
+
+    delta_data = datetime.datetime.strptime(dia_do_plantio, '%Y-%m-%d') - dt_hoje
+    delta_days = abs(delta_data.days)
+
+
+    fator = a_est[pos_dia][pos_estad] / delta_days
+
+    ajustada = a_est[pos_dia] * fator
+
+
+    datas_final = []
+
+    for contador_1 in range(0, len(ajustada)):
+        z = datetime.datetime.strptime(dia_do_plantio, '%Y-%m-%d') + datetime.timedelta(days=ajustada[contador_1])
+        y = z.strftime('%d-%m')
+        datas_final.append(y)
+
+    datas_tabela = np.asarray(datas_final)
+    tabela_final = np.stack((d_est, datas_tabela))
+
+    tabela_final_1 = tabela_final[0:2,0:8].copy()
+    tabela_final_2 = tabela_final[0:2,8:16].copy()
+
+    tabela_final_3 = np.vstack((tabela_final_1, tabela_final_2))
+
+
+# OBTENDO A DIREção do Vento
+
+    api_dir_1 = "https://projeta.cptec.inpe.br/api/v1/public/ETA/1/DAILY/2/12/2019/12/2019/D10M/" + latitude + "/" + longitude + "/"
+    api_dir_2 = "https://projeta.cptec.inpe.br/api/v1/public/ETA/1/DAILY/2/1/2020/6/2020/D10M/" + latitude + "/" + longitude + "/"
+
+    with urllib.request.urlopen(api_dir_1) as url:
+        data_dir_1 = json.loads(url.read().decode())
+
+    with urllib.request.urlopen(api_dir_2) as url:
+        data_dir_2 = json.loads(url.read().decode())
+
+    data_dir_0 = data_dir_1 + data_dir_2
+
+    # OBTENDO A VELOCIDADE do Vento
+
+    api_vel_1 = "https://projeta.cptec.inpe.br/api/v1/public/ETA/1/DAILY/2/12/2019/12/2019/W10M/" + latitude + "/" + longitude + "/"
+    api_vel_2 = "https://projeta.cptec.inpe.br/api/v1/public/ETA/1/DAILY/2/1/2020/6/2020/W10M/" + latitude + "/" + longitude + "/"
+
+    with urllib.request.urlopen(api_vel_1) as url:
+        data_vel_1 = json.loads(url.read().decode())
+
+    with urllib.request.urlopen(api_vel_2) as url:
+        data_vel_2 = json.loads(url.read().decode())
+
+    data_vel_0 = data_vel_1 + data_vel_2
+
+    # DECIFRA O JSON RECEBIDO #
+
+    dados_dir = []
+    dados_dir_valores = []
+    dias_passados = []
+    cont = 0
+
+    for item in data_dir_0:
+        if (datetime.datetime.strptime(item['date'], '%Y-%m-%d') < data_fim_dados
+                and datetime.datetime.strptime(item['date'], '%Y-%m-%d') > data_inicio_dados):
+            met_valores = {"date": None, "value": None, "dia": None, "dia_da_semana": None,}
+            met_valores['date'] = item['date']
+            met_valores['value'] = item['value']
+            a = item['value']
+            cont = cont + 1
+
+            dados_dir.append(met_valores)
+            dados_dir_valores.append(a)
+            dias_passados.append(cont)
+
+
+    dados_vel = []
+    dados_vel_valores = []
+
+    for item in data_vel_0:
+        if (datetime.datetime.strptime(item['date'], '%Y-%m-%d') < data_fim_dados
+               and datetime.datetime.strptime(item['date'], '%Y-%m-%d') > data_inicio_dados):
+            met_valores = {"date": None, "value": None, "dia": None, "dia_da_semana": None,}
+            met_valores['date'] = item['date']
+            met_valores['value'] = item['value']
+            a = item['value']
+
+            dados_vel.append(met_valores)
+            dados_vel_valores.append(a)
+
+
+    r = dados_vel_valores
+    theta = dados_dir_valores
+    area = 40 * np.pi #np.power(r,2)
+    colors = np.power(dias_passados, 2)
+
+    #fig, ((ax0, ax1, ax2), (ax3, ax4,ax5)) = plt.subplots(nrows=3, ncols=2,gridspec_kw={'height_ratios': [1, 1,3]})
+    fig, ((ax0,ax3),(ax1,ax4),(ax2,ax5)) = plt.subplots(nrows=3, ncols=2,gridspec_kw={'height_ratios': [1, 1,3]})
+    fig.subplots_adjust(hspace=0.9, wspace=-1.0)
 
     #GRÁFICO 1 - INDICE DE SEVERIDADE
 
@@ -351,7 +490,34 @@ with urllib.request.urlopen(api_4) as url:
     ax2.set_xticklabels(dia_acumulada, minor=True)
     ax2.set_title('Precipitação para Aplicação de Fungicida [mm]', fontsize='10',fontweight='bold')
 
+    table = ax3.table(cellText = tabela_final_3, loc='center',colWidths=16*[0.02], cellLoc='center')
+    table.auto_set_font_size(False)
+    table.set_fontsize(7)
+    table.scale(6,0.5)
+    ax3.set_title('Previsão de Estádio para o plantio. Estádio Atual: ' + estadio, fontsize='10',fontweight='bold')
+    ax3.axis('off')
+
+    table = ax4.table(cellText = diagnostico_visual, loc='center',colWidths=2*[0.2], cellLoc='center')
+    table.auto_set_font_size(False)
+    table.set_fontsize(8)
+    table.scale(2,0.5)
+    ax4.set_title('Avaliação visual de outras doenças na plantação', fontsize='10',fontweight='bold')
+    ax4.axis('off')
+
+    ax5.axis('off')
+    ax5.set_title('Medição de Atividade de Vento, últimos 30 dias', fontsize='10',fontweight='bold')
+    ax5 = fig.add_subplot(326, projection='polar')
+    c = ax5.scatter(theta, r, c=colors, s=area, cmap='YlGnBu', alpha=0.75)
+    ax5.set_ylabel('Radius', rotation=45, size=2)
+    #ax5.set_xlabel(size=4)
+
+
     fig.tight_layout()
+
+
+    plt.savefig('matriz.png', dpi=400, format='png')
+    mng = plt.get_current_fig_manager()
+    mng.resize(*mng.window.maxsize())
 
     plt.show()
 
